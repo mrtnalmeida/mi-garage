@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2420">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>Mi Garage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800&family=Chakra+Petch:wght@500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Un solo mundo visual: papel de hoja de ruta, carteles viales, tablero nocturno al arrancar y tarjetas de misión. Columna de celular centrada, navegación abajo. */
+:root {
+  --paper: #e8e2d2;
+  --paper-2: #f3f0e6;
+  --ink: #1f2420;
+  --ink-2: #4a473d;
+  --muted: #5d5a4e;
+  --asphalt: #3a3d3b;
+  --sign: #0b6e4f;
+  --yellow: #f2b705;
+  --red: #c4362b;
+  --violet: #3b2fd1;
+  --violet-2: #241b8f;
+  --dash: #0e1113;
+  --dash-2: #1a1f22;
+  --dash-ink: #e9eef0;
+  --dash-muted: #8fa0a6;
+  --glow: #ffb547;
+  --okglow: #3ccf91;
+  --font-body: "Overpass", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-dash: "Chakra Petch", "Overpass", monospace;
+  --font-fun: "Fredoka", "Overpass", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.45 var(--font-body); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; }
+
+.app { max-width: 520px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; padding-bottom: 96px; }
+header.top { padding: 16px 16px 10px; display: grid; gap: 10px; }
+.toprow { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+.title { font-size: 26px; font-weight: 800; line-height: 1.05; }
+.xp { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 999px; padding: 4px 12px 4px 4px; box-shadow: 0 2px 0 #cfc7b0; border: none; }
+.xp .lvl { width: 30px; height: 30px; border-radius: 50%; background: var(--yellow); display: grid; place-items: center; font: 700 14px var(--font-fun); }
+.xp span:last-child { font: 600 13px var(--font-fun); }
+.vswitch { display: flex; gap: 6px; flex-wrap: wrap; }
+.vswitch button { height: 40px; padding: 0 14px; border-radius: 10px; border: 2px solid var(--ink); background: transparent; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+.vswitch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.vswitch .dot { width: 9px; height: 9px; border-radius: 50%; }
+.banner { margin: 0 16px; padding: 10px 12px; border-radius: 10px; background: #fff3cf; border: 1px solid #e3c56a; font-size: 14px; }
+.banner[hidden] { display: none; }
+main { flex: 1; }
+.view[hidden] { display: none; }
+
+/* ---- Ruta ---- */
+.road { position: relative; padding: 8px 16px 8px 4px; }
+.road { --lane: 104px; }
+.road::before { content: ""; position: absolute; left: calc(4px + var(--lane) / 2 - 40px); top: 0; bottom: 0; width: 80px; background: var(--asphalt); border-left: 4px solid var(--paper-2); border-right: 4px solid var(--paper-2); }
+.road::after { content: ""; position: absolute; left: calc(4px + var(--lane) / 2 - 2px); top: 0; bottom: 0; width: 4px; background: repeating-linear-gradient(180deg, var(--yellow) 0 22px, transparent 22px 40px); }
+.stop { position: relative; z-index: 1; display: grid; grid-template-columns: var(--lane) minmax(0, 1fr); column-gap: 12px; align-items: center; min-height: 72px; padding: 8px 0; }
+.stop .pin { justify-self: center; display: grid; place-items: center; }
+@media (max-width: 380px) { .road { --lane: 92px; } }
+.pin-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--paper-2); border: 4px solid var(--ink); }
+.sign { text-align: left; border: none; width: 100%; display: grid; gap: 1px; padding: 10px 12px; border-radius: 10px; background: var(--sign); color: #fff; box-shadow: 0 0 0 3px #fff inset, 0 0 0 2px var(--sign); }
+.sign .k { font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.sign .n { font-size: 17px; font-weight: 800; line-height: 1.15; }
+.sign .d { font-size: 13px; opacity: .95; }
+.sign.warn { background: var(--yellow); color: var(--ink); box-shadow: 0 0 0 3px var(--ink) inset; }
+.sign.bad { background: var(--red); color: #fff; box-shadow: 0 0 0 3px #fff inset, 0 0 0 2px var(--red); }
+.sign.approx .k::after { content: " · ≈ APROX"; }
+.diamond { width: 46px; height: 46px; transform: rotate(45deg); background: var(--yellow); border: 3px solid var(--ink); border-radius: 6px; }
+.octa { width: 46px; height: 46px; background: var(--red); clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); display: grid; place-items: center; color: #fff; font: 800 10px var(--font-body); }
+.fog { text-align: left; width: 100%; border: 2px dashed #8a8572; background: rgb(243 240 230 / .92); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.fog .k { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+.fog .n { font-size: 16px; font-weight: 800; }
+.fog .d { font-size: 13px; color: var(--ink-2); }
+.foglist { display: grid; gap: 6px; margin-top: 8px; }
+.foglist button { text-align: left; border: 1px solid #cfc7b0; background: #fff; border-radius: 8px; padding: 8px 10px; font-size: 14px; display: flex; justify-content: space-between; gap: 8px; }
+.foglist button span:last-child { color: var(--violet); font-weight: 700; white-space: nowrap; }
+.here { background: var(--ink); color: var(--paper-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.here .k { font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--yellow); }
+.here .n { font-size: 26px; font-weight: 800; line-height: 1.05; }
+.here .d { font-size: 13px; color: #c9c4b3; }
+.past { color: var(--muted); display: grid; gap: 1px; padding: 4px 0; }
+.past .k { font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.past .n { font-size: 14px; font-weight: 700; color: var(--ink); }
+.roadactions { display: flex; gap: 10px; padding: 8px 16px 16px; }
+.btn { border: 2px solid var(--ink); background: transparent; border-radius: 10px; min-height: 44px; padding: 0 14px; font-weight: 800; }
+.btn.solid { background: var(--ink); color: var(--paper); }
+.btn.small { min-height: 36px; font-size: 14px; padding: 0 10px; }
+.btn.ghost { border-color: transparent; color: var(--violet); }
+.btn.danger { border-color: var(--red); color: var(--red); }
+.btn:disabled { opacity: .5; cursor: default; }
+.empty { color: var(--muted); padding: 8px 16px; }
+
+/* ---- Misiones ---- */
+.pad { padding: 4px 16px 16px; display: grid; gap: 14px; }
+.hero { background: var(--violet); color: #fff; border-radius: 24px; padding: 16px; display: grid; gap: 12px; box-shadow: 0 6px 0 var(--violet-2); }
+.hero.moto { background: #6e4326; box-shadow: 0 6px 0 #4a2b16; }
+.hero .who { display: flex; gap: 12px; align-items: center; }
+.hero .who svg { flex: none; width: 120px; height: auto; }
+.hero .name { font: 700 26px/1 var(--font-fun); }
+.hero .say { font: 600 15px var(--font-fun); }
+.hero .sub { font-size: 14px; opacity: .85; }
+.health { display: grid; gap: 6px; }
+.health .lbl { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+.hbar { display: flex; gap: 3px; height: 14px; }
+.hbar i { display: block; border-radius: 3px; min-width: 6px; }
+.hbar i:first-child { border-radius: 7px 3px 3px 7px; }
+.hbar i:last-child { border-radius: 3px 7px 7px 3px; }
+.xpbar { height: 10px; background: rgb(255 255 255 / .2); border-radius: 5px; overflow: hidden; }
+.xpbar i { display: block; height: 100%; background: var(--yellow); border-radius: 5px; }
+.h2fun { font: 600 19px var(--font-fun); }
+.mission { background: #fff; border-radius: 16px; padding: 12px; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; box-shadow: 0 3px 0 #cfc7b0; }
+.mission .ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; }
+.mission .t { font-weight: 800; line-height: 1.2; }
+.mission .s { font-size: 13px; color: var(--ink-2); }
+.mission .pts { font: 700 13px var(--font-fun); color: var(--violet); background: #ebe7ff; border-radius: 999px; padding: 4px 10px; white-space: nowrap; border: none; min-height: 36px; }
+.medals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.medal { background: #fff; border-radius: 14px; padding: 10px 8px; display: grid; justify-items: center; gap: 4px; text-align: center; box-shadow: 0 3px 0 #cfc7b0; }
+.medal .m { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--yellow); border: 3px solid var(--ink); }
+.medal.locked { background: transparent; box-shadow: none; border: 2px dashed #b9b19a; }
+.medal.locked .m { background: #d9d3c2; border-color: #9c957f; }
+.medal .t { font: 600 13px/1.15 var(--font-fun); }
+.medal .s { font-size: 11px; color: var(--muted); line-height: 1.25; }
+
+/* ---- Libreta ---- */
+.card { background: #fff; border-radius: 14px; padding: 14px; display: grid; gap: 12px; box-shadow: 0 2px 0 #cfc7b0; }
+.subtabs { display: flex; gap: 4px; }
+.subtabs button { flex: 1; min-height: 40px; border: 2px solid var(--ink); background: transparent; border-radius: 10px; font-weight: 700; }
+.subtabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+.trow { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #e3dccb; }
+.trow:last-child { border-bottom: none; }
+.trow .st { align-self: stretch; border-radius: 3px; }
+.trow .n { font-weight: 700; }
+.trow .m { font-size: 13px; color: var(--ink-2); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 7px 4px; border-bottom: 1px solid #e3dccb; vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+td.r, th.r { text-align: right; }
+.tablewrap { overflow-x: auto; }
+
+/* ---- Copiloto ---- */
+.chat { display: grid; gap: 10px; }
+.msgs { display: grid; gap: 10px; align-content: start; min-height: 240px; }
+.msg { padding: 9px 12px; border-radius: 12px; font-size: 15px; white-space: pre-wrap; max-width: 90%; }
+.msg.user { background: var(--ink); color: var(--paper); justify-self: end; }
+.msg.bot { background: #fff; justify-self: start; box-shadow: 0 2px 0 #cfc7b0; }
+.msg.tool { background: none; color: var(--muted); font-size: 12px; padding: 0 4px; }
+.chat form { display: flex; gap: 8px; }
+.chat textarea { flex: 1; resize: none; min-height: 60px; border: 2px solid var(--ink); border-radius: 10px; padding: 9px 10px; background: #fff; }
+.hints { display: flex; gap: 6px; flex-wrap: wrap; }
+.hints button { font-size: 13px; border: 1px dashed #8a8572; background: none; border-radius: 999px; padding: 4px 10px; color: var(--ink-2); }
+
+/* ---- Navegación ---- */
+nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: center; pointer-events: none; }
+nav.bottom .bar { pointer-events: auto; width: 100%; max-width: 520px; background: var(--ink); display: grid; grid-template-columns: 1fr 1fr 96px 1fr 1fr; align-items: end; padding: 6px 6px 10px; border-radius: 18px 18px 0 0; }
+nav.bottom .tab { border: none; background: none; color: #b9b5a6; display: grid; justify-items: center; gap: 2px; font-size: 12px; font-weight: 700; min-height: 48px; padding-top: 6px; }
+nav.bottom .tab[aria-current="page"] { color: var(--yellow); }
+.ignite { justify-self: center; width: 78px; height: 78px; margin-top: -30px; padding: 0; border-radius: 50%; border: 4px solid var(--ink); background: radial-gradient(circle at 40% 35%, #e0473a, #7d1912); color: #fff; font: 700 10px/1 var(--font-dash); letter-spacing: .04em; box-shadow: 0 0 0 4px #3a3d3b, 0 6px 14px rgb(0 0 0 / .3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; overflow: hidden; }
+.ignite svg { display: block; }
+
+/* ---- Diálogos ---- */
+dialog { border: none; border-radius: 18px; background: var(--paper-2); color: var(--ink); padding: 0; width: min(480px, calc(100vw - 24px)); max-height: calc(100vh - 32px); }
+dialog::backdrop { background: rgb(20 22 20 / .55); }
+dialog form { padding: 18px; display: grid; gap: 12px; }
+dialog h2 { font-size: 22px; font-weight: 800; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.field input, .field select, .field textarea { border: 2px solid #cfc7b0; border-radius: 10px; padding: 8px 10px; background: #fff; width: 100%; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 400px) { .grid2 { grid-template-columns: 1fr; } }
+.checks { display: grid; gap: 6px; max-height: 220px; overflow-y: auto; border: 2px solid #cfc7b0; background: #fff; border-radius: 10px; padding: 8px 10px; }
+.checks label, .inline { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.spread { justify-content: space-between; }
+.err { color: var(--red); margin: 0; font-weight: 600; }
+
+/* ---- Tablero (cargar km) ---- */
+dialog.dash { background: var(--dash); color: var(--dash-ink); }
+dialog.dash form { gap: 14px; }
+.dash .eyebrow { color: var(--dash-muted); font-family: var(--font-dash); }
+.dash h2 { font-family: var(--font-dash); font-weight: 700; }
+.gauge { display: grid; justify-items: center; background: radial-gradient(circle at 50% 75%, #1d2427, #121619 70%); border: 1px solid #263035; border-radius: 20px; padding: 12px 10px 10px; }
+.gauge svg { width: 100%; max-width: 300px; height: auto; }
+#needle { transform-origin: 150px 150px; transform: rotate(-90deg); }
+@media (prefers-reduced-motion: no-preference) { #needle { transition: transform 1.1s cubic-bezier(.3, 1.4, .5, 1); } .lamp { transition: opacity .3s, box-shadow .3s; } }
+.gauge .big { font: 700 34px/1 var(--font-dash); }
+.gauge .cap { font-size: 13px; color: #b7c3c7; text-align: center; }
+.odo { display: flex; gap: 10px; align-items: center; justify-content: center; }
+.odo input { width: 170px; text-align: center; font: 600 28px var(--font-dash); letter-spacing: .1em; color: var(--okglow); background: #050607; border: 1px solid #263035; border-radius: 10px; padding: 6px 8px; }
+.dash .inline { color: #b7c3c7; justify-content: center; }
+.lamps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lamp { border-radius: 12px; padding: 8px 6px; display: grid; justify-items: center; gap: 2px; text-align: center; font-size: 12px; font-weight: 700; background: var(--dash-2); border: 1px solid #263035; color: #5f6e73; opacity: .35; }
+.lamp.on.warn { opacity: 1; color: var(--glow); border-color: var(--glow); background: #2a1f0c; box-shadow: 0 0 16px rgb(255 181 71 / .35); }
+.lamp.on.bad { opacity: 1; color: #ff6b5e; border-color: #ff6b5e; background: #2c1210; box-shadow: 0 0 16px rgb(255 107 94 / .4); }
+.lamp.on.fog { opacity: .85; color: #b7c3c7; border-style: dashed; border-color: #5a6b71; }
+.lamp.on.ok { opacity: 1; color: var(--okglow); border-color: #2f6b50; background: #13241c; }
+.dash .btn { border-color: #3a474c; color: var(--dash-ink); }
+.dash .btn.go { background: radial-gradient(circle at 40% 35%, #e0473a, #7d1912); border: 3px solid #3a474c; color: #fff; font: 700 13px/1 var(--font-dash); letter-spacing: .04em; width: 92px; height: 92px; padding: 0; border-radius: 50%; justify-self: center; display: grid; place-items: center; }
+.reward { text-align: center; font: 700 16px var(--font-fun); color: var(--yellow); }
+
+/* ---- Login ---- */
+[hidden] { display: none !important; }
+body.locked nav.bottom { display: none; }
+.login { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.login form { width: min(360px, 100%); display: grid; gap: 12px; justify-items: stretch; text-align: center; }
+.login img { justify-self: center; border-radius: 22px; }
+.login h1 { font-family: var(--font-fun, inherit); font-size: 30px; }
+.login label { display: grid; gap: 4px; text-align: left; font-weight: 700; }
+.login input { font: inherit; padding: 12px; border-radius: 12px; border: 2px solid var(--ink); background: #fffdf6; }
+</style>
+</head>
+<body class="locked">
+<div class="login" id="login" hidden>
+  <form id="loginForm">
+    <img src="/icons/icon-192.png" alt="" width="96" height="96">
+    <h1>Mi Garage</h1>
+    <p id="loginMsg" style="color:var(--ink-2)">Entrá con tu cuenta para ver tus vehículos.</p>
+    <label>Email<input type="email" name="email" autocomplete="email" required></label>
+    <label>Contraseña<input type="password" name="password" autocomplete="current-password" required minlength="6"></label>
+    <button class="btn solid" type="submit">Entrar</button>
+    <button class="btn ghost small" type="button" id="signupBtn">Crear cuenta</button>
+  </form>
+</div>
+<div class="app" id="app" hidden>
+  <header class="top">
+    <div class="toprow">
+      <div><div class="eyebrow">Mi Garage</div><div class="title" id="vtitle">Hoja de ruta</div></div>
+      <button class="xp" type="button" data-view="misiones" aria-label="Ver nivel y medallas"><span class="lvl" id="lvl">1</span><span id="xptxt">0 XP</span></button>
+    </div>
+    <div class="vswitch" id="vswitch" aria-label="Vehículo"></div>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+  <main>
+    <section class="view" id="view-main" aria-live="polite"></section>
+    <section class="view pad" id="view-chat" hidden>
+      <div class="row spread"><span class="h2fun">Copiloto</span><button class="btn ghost small" id="chatReset" type="button">Nueva charla</button></div>
+      <div class="chat">
+        <div class="msgs" id="msgs"></div>
+        <div class="hints" id="hints"></div>
+        <form id="chatForm">
+          <label for="chatInput" style="position:absolute;left:-9999px">Mensaje</label>
+          <textarea id="chatInput" rows="2" placeholder="Ej: la moto tiene unos 8.000 km, más o menos"></textarea>
+          <button class="btn solid" type="submit" id="chatSend">Enviar</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+<nav class="bottom" aria-label="Secciones">
+  <div class="bar">
+    <button class="tab" type="button" data-view="ruta"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 21L10 3M17 21L14 3M12 7v2M12 13v2M12 19v1"></path></svg>Ruta</button>
+    <button class="tab" type="button" data-view="misiones"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"></circle><path d="M8.5 14l-1.5 8 5-3 5 3-1.5-8"></path></svg>Misiones</button>
+    <button class="ignite" type="button" data-act="km" aria-label="Arrancar: cargar km"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"></path><path d="M6.3 7.3a8 8 0 1 0 11.4 0"></path></svg><span>ARRANCAR</span></button>
+    <button class="tab" type="button" data-view="libreta"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"></path><path d="M9 9h6M9 13h6M9 17h4"></path></svg>Libreta</button>
+    <button class="tab" type="button" data-view="copiloto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>Copiloto</button>
+  </div>
+</nav>
+
+<dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
