@@ -576,7 +576,8 @@ const msgsEl = $("#msgs");
 let chatHistory = [];
 let sample = null;
 const HINTS = ["¿Qué le toca a cada vehículo?", "¿Qué presión llevan las cubiertas del Cronos?", "¿Qué significa el testigo naranja con un motor?", "Me voy de viaje 1.500 km con la moto, ¿qué reviso antes?"];
-function addMsg(role, text) { const d = document.createElement("div"); d.className = "msg " + role; d.textContent = text; msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight; return d; }
+function clean(t) { return String(t || "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#{1,6}\s+/gm, ""); }
+function addMsg(role, text) { const d = document.createElement("div"); d.className = "msg " + role; d.textContent = role === "bot" ? clean(text) : text; msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight; return d; }
 function resetChat() {
   chatHistory = []; msgsEl.innerHTML = "";
   addMsg("bot", "Hola Martín. Contame los km, lo que le hiciste a cada vehículo o preguntame qué toca, y yo actualizo el plan.");
@@ -690,21 +691,23 @@ Qué hacés:
 - Antes de un viaje, sugerí una revisión previa (presión y estado de neumáticos, aceite, refrigerante, frenos, luces; en moto también cadena) además de lo que vence durante el viaje según los km.
 - Si falta un dato imprescindible (qué vehículo, qué km), preguntalo en una línea. Las fechas van en formato YYYY-MM-DD; hoy es ${todayISO()}.
 - Si Martín dice que un dato es aproximado ("más o menos", "unos"), guardalo con aproximado: true. Si falta la fecha de un service, podés registrarlo sin fecha.
-- No inventes services que Martín no contó. No uses markdown con tablas; usá frases cortas o listas simples.`;
+- No inventes services que Martín no contó. No uses markdown (ni asteriscos, ni numerales, ni tablas): escribí frases cortas y, si hace falta, listas con guiones.
+- Cada mensaje de Martín dice qué vehículo está seleccionado en la app. Si la pregunta no nombra un vehículo, respondé solo sobre el seleccionado; hablá del otro solo si Martín lo nombra o pregunta por los dos.`;
 
 $("#chatForm").addEventListener("submit", async e => {
   e.preventDefault();
   const input = $("#chatInput"); const text = input.value.trim(); if (!text) return;
   if (!sample) { addMsg("bot", "El asistente no está disponible en esta vista. Podés usar los botones de la app."); return; }
   input.value = ""; addMsg("user", text);
-  chatHistory.push({ role: "user", content: text });
+  const sel = cur();
+  chatHistory.push({ role: "user", content: sel ? `[En la app está seleccionado: ${sel.name} (id ${sel.id}, ${sel.kind})]\n${text}` : text });
   const send = $("#chatSend"); send.disabled = true;
   const bubble = addMsg("bot", "Pensando…");
   try {
     const msgs = [{ role: "user", content: SYSTEM + "\n\n---\nMensaje de Martín:\n" + chatHistory[0].content }, ...chatHistory.slice(1)];
     const tools = TOOLS.map(t => ({ ...t, execute: async (inp) => { const r = await t.execute(inp || {}); const lbl = { buscar_manual: "Busqué en el manual", leer_paginas_manual: "Leí el manual", leer_garaje: "Leí el garage", actualizar_km: "Actualicé los km", registrar_service: "Registré el service", guardar_tarea: "Actualicé el plan", quitar_tarea: "Quité una tarea", editar_vehiculo: "Actualicé los datos", agregar_vehiculo: "Agregué un vehículo" }[t.name]; const n = document.createElement("div"); n.className = "msg tool"; n.textContent = "✓ " + lbl; msgsEl.insertBefore(n, bubble); return r; } }));
-    const res = await sample(msgs, { tools, cache: false, onText: ({ text }) => { bubble.textContent = text || "Pensando…"; msgsEl.scrollTop = msgsEl.scrollHeight; } });
-    bubble.textContent = res.text || "Listo.";
+    const res = await sample(msgs, { tools, cache: false, onText: ({ text }) => { bubble.textContent = clean(text) || "Pensando…"; msgsEl.scrollTop = msgsEl.scrollHeight; } });
+    bubble.textContent = clean(res.text) || "Listo.";
     chatHistory.push({ role: "assistant", content: res.text || "Listo." });
   } catch (err) {
     chatHistory.pop();
